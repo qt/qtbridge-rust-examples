@@ -8,4 +8,4 @@ edition = "2024"
 description = "A simple demo application"
 
 [dependencies]
-qtbridge = { path = "../../crates/qtbridge" }
+qtbridge = "*"
