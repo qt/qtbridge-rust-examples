@@ -1,0 +1,14 @@
+# Copyright (C) 2026 The Qt Company Ltd.
+# SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only
+
+[package]
+name = "host_monitor"
+version = "0.1.0"
+edition = "2024"
+description = "A simple demo for monitoring host availability and latency"
+
+[dependencies]
+linkme = "0.3.35"
+qtbridge = { path = "../../crates/qtbridge" }
+reqwest = "0.13.2"
+tokio = { version = "1.49.0", features = ["full"] }

@@ -1,0 +1,11 @@
+# Copyright (C) 2026 The Qt Company Ltd.
+# SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only
+
+[package]
+name = "hello_world"
+version = "0.1.0"
+edition = "2024"
+description = "A hello world with Qt"
+
+[dependencies]
+qtbridge = { path = "../../crates/qtbridge" }
