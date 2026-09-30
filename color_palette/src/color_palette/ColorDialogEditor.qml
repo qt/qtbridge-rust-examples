@@ -2,11 +2,9 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 import QtQuick.Dialogs
-
-import QtExampleStyle
 
 Popup {
     id: colorEditor
@@ -21,7 +19,7 @@ Popup {
 
     property bool newColor: true
     property int colorId: -1
-    property alias currentColor: colordialogButton.buttonColor
+    property color currentColor: "white"
 
     function createNewColor() {
         newColor = true
@@ -91,19 +89,25 @@ Popup {
             }
         }
 
-        Button {
-            id: colordialogButton
+        RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
-            text: qsTr("Change Color")
-            textColor: isColorDark(buttonColor) ?
-                           UIStyle.textOnDarkBackground :
-                           UIStyle.textOnLightBackground
+            spacing: 10
 
-            onClicked: colorDialog.open()
+            Rectangle {
+                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30
+                Layout.minimumWidth: 30
+                Layout.minimumHeight: 30
+                radius: 4
+                border.width: 1
+                border.color: palette.mid
+                color: colorEditor.currentColor
+            }
 
-            function isColorDark(color) {
-                return (0.2125 * color.r + 0.7154 * color.g + 0.0721 * color.b) < 0.5;
+            Button {
+                Layout.fillWidth: true
+                text: qsTr("Change Color")
+                onClicked: colorDialog.open()
             }
         }
 
@@ -120,10 +124,6 @@ Popup {
             Button {
                 Layout.fillWidth: true
                 text: colorEditor.newColor ? qsTr("Add") : qsTr("Update")
-
-                buttonColor: UIStyle.highlightColor
-                buttonBorderColor: UIStyle.highlightBorderColor
-                textColor: UIStyle.textColor
 
                 onClicked: {
                     if (colorEditor.newColor) {

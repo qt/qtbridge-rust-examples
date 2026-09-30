@@ -1,10 +1,9 @@
 # This file only exists for qmake.
 
-module ColorPalette
-prefer :/qt/qml/ColorPalette/
+module color_palette
+prefer :/qt/qml/color_palette/
 Main 1.0 Main.qml
 ColorDialogDelete 1.0 ColorDialogDelete.qml
 ColorDialogEditor 1.0 ColorDialogEditor.qml
 ColorView 1.0 ColorView.qml
-ServerSelection 1.0 ServerSelection.qml
 UserMenu 1.0 UserMenu.qml

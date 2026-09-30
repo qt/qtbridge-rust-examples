@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Fusion
 import QtQuick.Layouts
-
-import QtExampleStyle
 
 Popup {
     id: colorDeleter
@@ -31,17 +29,13 @@ Popup {
         anchors.fill: parent
         spacing: 10
 
-        Text {
-            color: UIStyle.titletextColor
+        Label {
             text: qsTr("Delete Color?")
-            font.pixelSize: UIStyle.fontSizeL
             font.bold: true
         }
 
-        Text {
-            color: UIStyle.textColor
+        Label {
             text: qsTr("Are you sure, you want to delete color") + " \"" + colorDeleter.colorName + "\"?"
-            font.pixelSize: UIStyle.fontSizeM
         }
 
         RowLayout {
@@ -57,9 +51,6 @@ Popup {
             Button {
                 Layout.fillWidth: true
                 text: qsTr("Delete")
-
-                buttonColor: UIStyle.colorRed
-                textColor: UIStyle.textOnLightBackground
 
                 onClicked: {
                     colorDeleter.deleteClicked(colorDeleter.colorId)
