@@ -4,7 +4,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use qtbridge::{QmlObject, invoke_method};
+use qtbridge::QmlObject;
 
 use crate::rest_service::Service;
 use crate::utils::{is_success, send};
@@ -75,7 +75,7 @@ impl PaginatedResource {
         let url = format!("{}?page={}", service.url_for(&self.path), self.current_page);
         let headers = service.common_headers();
         let client = service.client();
-        let invoker = self.get_qml_method_invoker();
+        let handle = self.get_thread_handle();
 
         service.spawn(async move {
             let mut request = client.get(&url);
@@ -86,7 +86,7 @@ impl PaginatedResource {
             if !is_success(status) {
                 eprintln!("[colorpalette] GET {url} -> HTTP {status}: {body}");
             }
-            invoke_method!(invoker, "on_refresh_finished", body, status);
+            handle.invoke_mut(move |s| s.on_refresh_finished(body, status));
         });
     }
 
@@ -99,7 +99,7 @@ impl PaginatedResource {
         let url = service.borrow().url_for(&self.path);
         let headers = service.borrow().common_headers();
         let client = service.borrow().client();
-        let invoker = self.get_qml_method_invoker();
+        let handle = self.get_thread_handle();
 
         service.borrow().spawn(async move {
             let mut request = client.post(&url).json(&data);
@@ -107,7 +107,7 @@ impl PaginatedResource {
                 request = request.header(key, value);
             }
             let (_body, status) = send(request).await;
-            invoke_method!(invoker, "on_mutation_finished", status);
+            handle.invoke_mut(move |s| s.on_mutation_finished(status));
         });
     }
 
@@ -120,7 +120,7 @@ impl PaginatedResource {
         let url = format!("{}/{id}", service.borrow().url_for(&self.path));
         let headers = service.borrow().common_headers();
         let client = service.borrow().client();
-        let invoker = self.get_qml_method_invoker();
+        let handle = self.get_thread_handle();
 
         service.borrow().spawn(async move {
             let mut request = client.put(&url).json(&data);
@@ -128,7 +128,7 @@ impl PaginatedResource {
                 request = request.header(key, value);
             }
             let (_body, status) = send(request).await;
-            invoke_method!(invoker, "on_mutation_finished", status);
+            handle.invoke_mut(move |s| s.on_mutation_finished(status));
         });
     }
 
@@ -141,7 +141,7 @@ impl PaginatedResource {
         let url = format!("{}/{id}", service.borrow().url_for(&self.path));
         let headers = service.borrow().common_headers();
         let client = service.borrow().client();
-        let invoker = self.get_qml_method_invoker();
+        let handle = self.get_thread_handle();
 
         service.borrow().spawn(async move {
             let mut request = client.delete(&url);
@@ -149,12 +149,11 @@ impl PaginatedResource {
                 request = request.header(key, value);
             }
             let (_body, status) = send(request).await;
-            invoke_method!(invoker, "on_mutation_finished", status);
+            handle.invoke_mut(move |s| s.on_mutation_finished(status));
         });
     }
 
     /// Main-thread continuation for a page GET.
-    #[qslot]
     fn on_refresh_finished(&mut self, body: String, status: i32) {
         if !is_success(status) {
             self.error_occurred(format!("request failed with HTTP status {status}"));
@@ -181,7 +180,6 @@ impl PaginatedResource {
     }
 
     /// Main-thread continuation for add/update/remove: refresh on success.
-    #[qslot]
     fn on_mutation_finished(&mut self, status: i32) {
         if is_success(status) {
             self.refresh_current_page();

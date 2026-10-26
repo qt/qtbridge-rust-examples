@@ -4,7 +4,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use qtbridge::{QmlObject, invoke_method};
+use qtbridge::QmlObject;
 use crate::rest_service::Service;
 use crate::utils::{is_success, send};
 
@@ -53,14 +53,14 @@ impl BasicLogin {
         let url = service.borrow().url_for(&self.login_path);
         let headers = service.borrow().common_headers();
         let client = service.borrow().client();
-        let invoker = self.get_qml_method_invoker();
+        let handle = self.get_thread_handle();
         service.borrow().spawn(async move {
             let mut request = client.post(&url).json(&data);
             for (key, value) in headers {
                 request = request.header(key, value);
             }
             let (body, status) = send(request).await;
-            invoke_method!(invoker, "on_login_finished", email, id, body, status);
+            handle.invoke_mut(move |s| s.on_login_finished(email, id, body, status));
         });
     }
 
@@ -74,7 +74,7 @@ impl BasicLogin {
         let url = service.url_for(&self.logout_path);
         let headers = service.common_headers();
         let client = service.client();
-        let invoker = self.get_qml_method_invoker();
+        let handle = self.get_thread_handle();
 
         service.spawn(async move {
             let mut request = client.post(&url).body(String::new());
@@ -82,12 +82,11 @@ impl BasicLogin {
                 request = request.header(key, value);
             }
             let (_body, status) = send(request).await;
-            invoke_method!(invoker, "on_logout_finished", status);
+            handle.invoke_mut(move |s| s.on_logout_finished(status));
         });
     }
 
     /// Main-thread continuation for `login`: record the user on success.
-    #[qslot]
     fn on_login_finished(&mut self, email: String, id: i32, body: String, status: i32) {
         let token = is_success(status)
             .then(|| serde_json::from_str::<serde_json::Value>(&body).ok())
@@ -114,7 +113,6 @@ impl BasicLogin {
     }
 
     /// Main-thread continuation for `logout`: clear the user on success.
-    #[qslot]
     fn on_logout_finished(&mut self, status: i32) {
         if is_success(status) {
             self.user.clear();

@@ -1,7 +1,7 @@
 // Copyright (C) 2026 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-use qtbridge::{QApp, QmlObject, invoke_method, qobject};
+use qtbridge::{QApp, QmlObject, qobject};
 use std::time::Instant;
 use tokio::runtime::Builder;
 
@@ -64,9 +64,10 @@ impl Backend {
 
     #[qslot]
     fn make_request(&self) {
-        // QmlMethodInvoker will be passed to the async task so it can schedule
-        // the update_status slot to run on the Qt main thread after the request completes.
-        let invoker = self.get_qml_method_invoker();
+        // QThreadHandle will be passed to the async task so it can schedule
+        // a closure to run on this Backend on the Qt main thread after the
+        // request completes.
+        let handle = self.get_thread_handle();
         let hostname: String = self.hostname.clone();
         self.runtime.spawn(async move {
             let start = Instant::now();
@@ -80,14 +81,13 @@ impl Backend {
                 0
             };
 
-            // invoke_method schedule the "update_status" slot to run on the Qt main thread,
-            // which will read the latest value from the watch channel and update the properties
-            // accordingly.
-            invoke_method!(invoker, "update_status", result, latency);
+            // invoke_mut schedules the closure to run on the Qt main thread with
+            // mutable access to the Backend; if the Backend has been dropped by
+            // then, the closure is discarded.
+            handle.invoke_mut(move |backend| backend.update_status(result, latency));
         });
     }
 
-    #[qslot]
     fn update_status(&mut self, status: bool, latency: u64) {
         self.set_status(status);
         self.set_latency(latency);
